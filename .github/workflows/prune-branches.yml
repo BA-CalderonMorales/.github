@@ -1,0 +1,36 @@
+name: Reusable Prune Branches
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: "List branches that would be deleted without deleting them"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Prune merged branches
+        run: |
+          git fetch --prune
+          DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | awk '{print $NF}')
+          MERGED=$(git branch -r --merged origin/$DEFAULT_BRANCH | grep -v "origin/$DEFAULT_BRANCH" | grep -v 'origin/dependabot/' | sed 's/origin\///')
+          if [ -n "$MERGED" ]; then
+            if [ "${{ inputs.dry-run }}" = "true" ]; then
+              echo "Would delete:"
+              echo "$MERGED"
+            else
+              for branch in $MERGED; do
+                git push origin --delete "$branch" || true
+              done
+            fi
+          fi

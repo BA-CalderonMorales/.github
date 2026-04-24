@@ -98,6 +98,9 @@ for branch in $(git branch -r --merged origin/main --format='%(refname:short)' 2
     fi
 done
 
+# Prune remote-tracking refs so the next scan doesn't re-attempt deletions
+git fetch --prune origin 2>/dev/null || true
+
 # Check remote branches merged into origin/develop
 echo ""
 echo "  Remote branches merged into origin/develop:"
